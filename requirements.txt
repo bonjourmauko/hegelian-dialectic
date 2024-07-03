@@ -1,0 +1,9 @@
+black
+h5py
+ipython
+matplotlib
+numpy<2
+pandas
+pyqt6
+tables
+vispy
