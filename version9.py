@@ -3,15 +3,19 @@ import numpy as np
 import pandas as pd
 
 
+def spin():
+    return np.random.choice([-1, 0, 1])
+
+
 # Dialectical functions
 
 
 def psi_1(x):
-    return x**2 * np.exp(1j * x)
+    return np.cos(x) + 1j * np.sin(x) * spin()
 
 
 def psi_2(x):
-    return np.exp(1j * x) * (2 * x + 1j * x**2)
+    return np.cos(x) - 1j * np.sin(x) * spin()
 
 
 def psi_3(x):
@@ -111,7 +115,7 @@ def psi(state, x):
 
 # Generate x values
 
-x_vals = np.linspace(0, 50 * np.pi, 1000000, dtype=np.complex128)
+x_vals = np.linspace(-1000 * np.pi, 1000 * np.pi, 1000000, dtype=np.complex128)
 
 # Generate steps
 
@@ -146,6 +150,6 @@ df = pd.DataFrame(normalised, columns=("x", "Ψ(x)", "Ψ*(x)"))
 
 # Save to disk
 
-df.to_csv("data.v8.csv")
+df.to_csv("data.v9.csv")
 
-df.to_hdf("data.h5", "v8")
+df.to_hdf("data.h5", "v9")

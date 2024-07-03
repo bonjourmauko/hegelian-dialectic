@@ -1,3 +1,4 @@
+aquarel
 black
 h5py
 ipython
