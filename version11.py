@@ -7,42 +7,67 @@ import pandas as pd
 
 
 def psi_1(x):
-    return x**2 * np.exp(1j * x)
+    """Pure being and pure nothing"""
+    return x - 1j * x
 
 
 def psi_2(x):
-    return np.exp(1j * x) * (2 * x + 1j * x**2)
+    """Coming-to-be and ceasing-to-be"""
+    if x == 0:
+        return np.exp(1) + np.exp(1j)
+
+    return psi_2(0) * (np.exp(x) + np.exp(-1j * x))
 
 
 def psi_3(x):
-    return psi_1(x) + psi_2(x)
+    """Identity of being and nothing"""
+    if x == 0:
+        return np.exp(1) + np.exp(1j)
+
+    return (1 / psi_2(0)) * (1 / np.exp(x) + 1 / np.exp(-1j * x))
 
 
 def psi_4(x):
-    return psi_2(psi_1(x))
+    """Vanishing of being and nothing"""
+    return 10**15 + 1j / 10**15
 
 
 def psi_5(x):
-    return psi_1(psi_2(x))
+    """Vanishing into opposite"""
+    return 1 / 10**15 + 1 / (1j / 10**15)
 
 
 def psi_6(x):
-    return psi_4(psi_3(x)) * psi_5(psi_3(x))
+    """Mutual vanishing"""
+    return -psi_5(x)
 
 
 def psi_7(x):
-    return psi_3(psi_1(x))
+    """Becoming - Being and nothing"""
+    return -x - 1j * x
 
 
 def psi_8(x):
-    return psi_6(psi_2(x))
+    """Becoming - Difference"""
+    return x + -1j * x
 
 
 def psi_9(x):
-    return psi_7(psi_3(x)) * psi_8(psi_3(x))
+    """Becoming - Identity"""
+    return -x + 1j * x
 
 
-# Group them for Markon choising
+def psi_10(x):
+    """Becoming as ceaseless unrest"""
+    return np.cos(x) - 1j * np.sin(x)
+
+
+def psi_11(x):
+    """Becoming as quiescent result"""
+    return np.cos(x) ** 2 + 1j * np.sin(x) ** 2
+
+
+# Group them for Markov choising
 
 psi_functions = [
     psi_1,
@@ -54,20 +79,24 @@ psi_functions = [
     psi_7,
     psi_8,
     psi_9,
+    psi_10,
+    psi_11,
 ]
 
 # Define dependencies
 
 dependencies = {
-    1: list(range(3, 10)),
-    2: list(range(3, 10)),
-    3: list(range(4, 10)),
-    4: list(range(6, 10)),
-    5: list(range(6, 10)),
-    6: list(range(7, 10)),
-    7: list(range(9, 10)),
-    8: list(range(9, 10)),
-    9: list(range(10, 10)),
+    1: [],
+    2: [],
+    3: [],
+    4: [],
+    5: [],
+    6: [],
+    7: [],
+    8: [],
+    9: [],
+    10: [],
+    11: [],
 }
 
 # Initialize transition matrix
@@ -111,7 +140,7 @@ def psi(state, x):
 
 # Generate x values
 
-x_vals = np.linspace(0, 1000 * np.pi, 100000, dtype=np.complex128)
+x_vals = np.linspace(0, 200 * np.pi, 1000000, dtype=np.complex128)
 
 # Generate steps
 
@@ -146,6 +175,6 @@ df = pd.DataFrame(normalised, columns=("x", "Ψ(x)", "Ψ*(x)"))
 
 # Save to disk
 
-df.to_csv("data.v8.csv")
+df.to_csv("data.v11.csv")
 
-df.to_hdf("data.h5", "v8")
+df.to_hdf("data.h5", "v11")
