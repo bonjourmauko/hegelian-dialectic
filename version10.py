@@ -2,173 +2,171 @@ import h5py
 import numpy as np
 import pandas as pd
 
-# Total number of iterations
-n = 2 * 10**6
+for index in range(1, 10**6 + 1):
+    # Total number of iterations
+    n = 10**0 * index
 
-# Number of oscillations
-p = 100 * np.pi
+    # Where are we
+    print(n)
 
-# Dumping ratio
-a = p / (5*p + 1)**2
+    # Number of oscillations
+    p = 10**2**np.pi
 
-# Dialectical functions
+    # Dumping ratio
+    # a = p / (5*p + 1)**2
 
+    # Dialectical functions
 
-def psi_1(x):
-    """Being"""
-    x = x.real
-    k = x % np.pi
-    real_part = x**2 * np.cos(k) * np.exp(-a * x**2)
-    imag_part = x**2 * np.sin(k) * np.exp(-a * x**2)
-    return real_part + 1j * imag_part
+    def psi_1(x, s1, s2, i1, i2):
+        """Being"""
+        x = x.real
+        k = x % np.pi
+        real_part = np.cos(x) * s1
+        imag_part = np.sin(x) * s2
+        return real_part + 1j * imag_part
 
+    def psi_2(x, s1, s2, i1, i2):
+        """Nothing"""
+        return psi_1(x, s1, s2, i1, i2) + psi_3(x, s1, s2, i1, i2)
 
-def psi_2(x):
-    """Nothing"""
-    return psi_1(x) + psi_3(x)
+    def psi_3(x, s1, s2, i1, i2):
+        """Becoming — Difference — Identity"""
+        x = x.real
+        k = x % np.pi
+        real_part = np.cos(x) * s1
+        imag_part = -np.sin(x) * s2
+        return real_part + 1j * imag_part
 
+    def psi_4(x, s1, s2, i1, i2):
+        """Passing"""
+        return psi_2(psi_1(x, s1, s2, i1, i2), s1, s2, i1, i2)
 
-def psi_3(x):
-    """Becoming — Difference — Identity"""
-    x = x.real
-    k = x % np.pi
-    real_part = x**2 * (np.cos(k) - np.sin(k)) * np.exp(-a * x**2)
-    imag_part = x**2 * (np.sin(k) + np.cos(k)) * np.exp(-a * x**2)
-    return real_part + 1j * imag_part
+    def psi_5(x, s1, s2, i1, i2):
+        """Arising"""
+        return psi_1(psi_2(x, s1, s2, i1, i2), s1, s2, i1, i2)
 
+    def psi_6(x, s1, s2, i1, i2):
+        """Equilibrium"""
+        return psi_4(psi_3(x, s1, s2, i1, i2), s1, s2, i1, i2) - psi_5(
+            psi_3(x, s1, s2, i1, i2), s1, s2, i1, i2
+        )
 
-def psi_4(x):
-    """Passing"""
-    return psi_2(psi_1(x))
+    def psi_7(x, s1, s2, i1, i2):
+        """Emerging"""
+        return psi_3(psi_1(x, s1, s2, i1, i2), s1, s2, i1, i2)
 
+    def psi_8(x, s1, s2, i1, i2):
+        """Dissolving"""
+        return psi_6(psi_2(x, s1, s2, i1, i2), s1, s2, i1, i2)
 
-def psi_5(x):
-    """Arising"""
-    return psi_1(psi_2(x))
+    def psi_9(x, s1, s2, i1, i2):
+        """Harmony"""
+        return psi_8(psi_3(x, s1, s2, i1, i2), s1, s2, i1, i2) - psi_7(
+            psi_3(x, s1, s2, i1, i2), s1, s2, i1, i2
+        )
 
+    # Group them for Markov chaining
 
-def psi_6(x):
-    """Equilibrium"""
-    return psi_5(psi_3(x)) - psi_4(psi_3(x))
+    psi_functions = [
+        psi_1,
+        psi_2,
+        psi_3,
+        psi_4,
+        psi_5,
+        psi_6,
+        psi_7,
+        psi_8,
+        psi_9,
+    ]
 
+    # Define rules
 
-def psi_7(x):
-    """Emerging"""
-    return psi_3(psi_1(x))
+    rules = {
+        (1,): [1, 2],
+        (2,): [1, 2, 3],
+        (3,): [1, 2, 3, 4],
+        (4,): [3, 4, 5],
+        (5,): [3, 4, 5, 6],
+        (6,): [4, 5, 6, 7],
+        (7,): [6, 7, 8],
+        (8,): [6, 7, 8, 9],
+        (9,): [7, 8, 9],
+    }
 
+    # Initialize transition matrix
 
-def psi_8(x):
-    """Dissolving"""
-    return psi_6(psi_2(x))
+    n_states = len(psi_functions)
 
+    transition_matrix = np.zeros((n_states, n_states))
 
-def psi_9(x):
-    """Harmony"""
-    return psi_8(psi_3(x)) - psi_7(psi_3(x))
+    # Populate transition matrix with appropriate probabilities
 
+    for from_states, to_states in rules.items():
+        prob = 1 / len(to_states)  # Equiprobable transitions
+        for from_state in from_states:
+            for to_state in to_states:
+                transition_matrix[from_state - 1, to_state - 1] = prob
 
-# Group them for Markov chaining
+    # Ensure rows sum up to 1
 
-psi_functions = [
-    psi_1,
-    psi_2,
-    psi_3,
-    psi_4,
-    psi_5,
-    psi_6,
-    psi_7,
-    psi_8,
-    psi_9,
-]
+    row_sums = transition_matrix.sum(axis=1)
 
-# Define rules
+    transition_matrix /= row_sums[:, np.newaxis]
 
-rules = {
-    (1,): [1, 2],
-    (2,): [1, 2, 3],
-    (3,): [1, 2, 3, 4],
-    (4,): [3, 4, 5],
-    (5,): [3, 4, 5, 6],
-    (6,): [4, 5, 6, 7],
-    (7,): [6, 7, 8],
-    (8,): [6, 7, 8, 9],
-    (9,): [7, 8, 9],
-}
+    # Function to simulate one step of the Markov chain
 
-# Initialize transition matrix
+    def next_state(current_state):
+        return np.random.choice(range(n_states), p=transition_matrix[current_state])
 
-n_states = len(psi_functions)
+    # Define the composite function Ψ(x) with stochastic selection
 
-transition_matrix = np.zeros((n_states, n_states))
+    def psi(state, x, s1, s2, i1, i2):
+        return psi_functions[state](x, s1, s2, i1, i2)
 
-# Populate transition matrix with appropriate probabilities
+    # Generate x values
+    x_vals = np.linspace(-p, p, n, dtype=np.complex128)
 
-for from_states, to_states in rules.items():
-    prob = 1 / len(to_states)  # Equiprobable transitions
-    for from_state in from_states:
-        for to_state in to_states:
-            transition_matrix[from_state - 1, to_state - 1] = prob
+    # Generate spin values
+    s_vals = np.random.choice([-1, 1], [2, n])
 
-# Ensure rows sum up to 1
+    # Generate inverse values
+    i_vals = np.random.choice([-1, 1], [2, n])
 
-row_sums = transition_matrix.sum(axis=1)
+    # Generate steps
 
-transition_matrix /= row_sums[:, np.newaxis]
+    values = []
 
+    state = None
 
-# Function to simulate one step of the Markov chain
+    for i, x in enumerate(x_vals):
+        if state is None:
+            state = 0
 
+        else:
+            state = next_state(state)
 
-def next_state(current_state):
-    return np.random.choice(range(n_states), p=transition_matrix[current_state])
+        values.append(
+            psi(state, x, s_vals[0][i], s_vals[1][i], i_vals[0][i], i_vals[1][i])
+        )
 
+    # Evaluate psi(x) for these x values
 
-# Define the composite function Ψ(x) with stochastic selection
+    psi_vals = np.array(values)
 
+    # Normalise data
 
-def psi(state, x):
-    return psi_functions[state](x)
+    data = np.vstack([x_vals.real, psi_vals.real, psi_vals.imag])
 
+    normalised = (data - data.min()) / (data.max() - data.min())
 
-# Generate x values
-x_vals = np.linspace(0, p, n, dtype=np.complex128)
+    # Extract real and imaginary parts for mapping x -> x, y -> y.real, z -> y.imag
 
-# Generate spin values
-s_vals = np.random.choice([-1, 1], [2, n])
+    df = pd.DataFrame(normalised.T, columns=("x", "Ψ(x)", "Ψ*(x)"))
 
-# Generate steps
+    # Plotting
 
-values = []
+    # Save to disk
 
-state = None
+    # df.to_csv("data.v10.csv")
 
-for i, x in enumerate(x_vals):
-    if state is None:
-        state = 0
-
-    else:
-        state = next_state(state)
-
-    values.append(psi(state, x))
-
-# Evaluate psi(x) for these x values
-
-psi_vals = np.array(values)
-
-# Normalise data
-
-data = np.vstack([x_vals.real, psi_vals.real * s_vals[0], psi_vals.imag * s_vals[1]])
-
-normalised = (data - data.min()) / (data.max() - data.min())
-
-# Extract real and imaginary parts for mapping x -> x, y -> y.real, z -> y.imag
-
-df = pd.DataFrame(normalised.T, columns=("x", "Ψ(x)", "Ψ*(x)"))
-
-# Plotting
-
-# Save to disk
-
-df.to_csv("data.v10.csv")
-
-df.to_hdf("data.h5", "v10")
+    df.to_hdf("data.h5", f"v10n{index}")

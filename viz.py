@@ -1,57 +1,68 @@
-import aquarel
-import pandas as pd
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-from matplotlib import animation
+import random
+import pandas
+import pyqtgraph.exporters
 
-df = pd.read_hdf("data.h5", "v10")
-dpi = 300
-frames = 60
-chunk_size = int(len(df["x"].T) / frames)
+# Config
+image_width = 4480
+image_height = 2520
+background_colors = [
+    *[
+        "#2e3440",
+        "#3b4252",
+        "#434c5e",
+        "#4c566a",
+        "#111115",
+        "#2e2137",
+        "#db904e",
+        "#c74a00",
+        "#770000",
+        "#0e1820",
+        "#0f334d",
+        "#0b5d85",
+    ],
+    *["#000000"] * 100,
+]
+pen_colors = [
+    *[
+        "#d8dee9",
+        "#e5e9f0",
+        "#eceff4",
+        "#f40234",
+        "#f0532c",
+        "#f0882f",
+        "#688b2e",
+        "#013f73",
+        "#ffc7c7",
+        "#ffe4e1",
+        "#dcecf5",
+        "#bad8eb",
+        "#e9f7f7",
+        "#edf8f8",
+        "#f1fbfb",
+        "#f4fbfb",
+        "#f9ffff",
+    ],
+    *["#ffffff"] * 100,
+]
 
+for index in range(1, 10**6 + 1):
+    # Read data
+    data = pandas.read_hdf("data.h5", f"v10n{index}")
 
-def update_lines(num, lines):
-    chunk = num * chunk_size
+    # Set background
+    background_color = pyqtgraph.mkColor(random.choice(background_colors))
+    pyqtgraph.setConfigOption("background", background_color)
+    pyqtgraph.setConfigOption("foreground", background_color)
 
-    for i, line in zip(range(chunk), lines):
-        line.set_data_3d([df["x"][:i], df["Ψ(x)"][:i], df["Ψ*(x)"][:i]])
+    # Create line
+    pen_color = pyqtgraph.mkColor(random.choice(pen_colors))
+    pen = pyqtgraph.mkPen(color=pen_color, width=10.0 / (index / 10 ^ 3))
 
-    return lines
+    # Plot
+    plot = pyqtgraph.plot(data["Ψ(x)"], data["Ψ*(x)"], pen=pen)
 
-
-with aquarel.load_theme("arctic_dark"):
-    mpl.rcParams["agg.path.chunksize"] = 10000
-
-    plt.axis("off")
-
-    fig = plt.figure(figsize=(13, 11))
-
-    ax = fig.add_subplot(111, projection="3d", elev=108, azim=-49, roll=0)
-    # ax = fig.add_subplot(111, projection="3d")
-    ax.set_box_aspect(aspect=(10, 1, 1))
-    ax.margins(tight=True)
-    ax.set_axis_off()
-
-    # lines = [
-    #     ax.plot([], [], [], linewidth=1 / (i * 10 + 1))[0]
-    #     for i in range(frames * chunk_size)
-    # ]
-
-    # anim = animation.FuncAnimation(
-    #     fig, update_lines, frames, fargs=(lines,), interval=1
-    # )
-
-    ax.set_title("Existence")
-    ax.plot(df["x"], df["Ψ(x)"], df["Ψ*(x)"], linewidth=0.001)
-    plt.subplots_adjust(top=1.2, bottom=-0.2, right=1.6, left=-0.6)
-
-    # writervideo = animation.FFMpegWriter(fps=frames / 2)
-
-    # anim.save("version10-2.mp4", writer=writervideo)
-
-    # plt.close()
-
-    # plt.show()
-
-    for i in range(1, 8):
-        plt.savefig(f"version10-{i}.png", dpi=dpi * i, bbox_inches="tight")
+    # Export
+    exporter = pyqtgraph.exporters.ImageExporter(plot.plotItem)
+    exporter.params["width"] = image_width
+    exporter.params["height"] = image_height
+    exporter.export(f"img/{index}.png")
