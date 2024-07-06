@@ -2,16 +2,14 @@ import h5py
 import numpy as np
 import pandas as pd
 
-for index in range(1, 10**6 + 1):
-    # Total number of iterations
-    n = 10**0 * index
+# Total number of iterations
+n = 10**8
 
-    # Where are we
-    print(n)
+# Number of oscillations
+p = (n / 10**3) * np.pi
 
-    # Number of oscillations
-    p = 10**2**np.pi
 
+for index in range(n, n + 1):
     # Dumping ratio
     # a = p / (5*p + 1)**2
 
@@ -136,14 +134,20 @@ for index in range(1, 10**6 + 1):
 
     values = []
 
+    # Save the state differential
+
+    states = []
+
     state = None
 
     for i, x in enumerate(x_vals):
         if state is None:
             state = 0
+            states.append(state)
 
         else:
             state = next_state(state)
+            states.append(state - states[i - 1])
 
         values.append(
             psi(state, x, s_vals[0][i], s_vals[1][i], i_vals[0][i], i_vals[1][i])
@@ -154,19 +158,21 @@ for index in range(1, 10**6 + 1):
     psi_vals = np.array(values)
 
     # Normalise data
+    def normalise(vector):
+        return (vector - vector.min()) / (vector.max() - vector.min())
 
-    data = np.vstack([x_vals.real, psi_vals.real, psi_vals.imag])
-
-    normalised = (data - data.min()) / (data.max() - data.min())
+    data_x = normalise(psi_vals.real)
+    data_y = normalise(psi_vals.imag)
+    data_z = np.array(states, dtype=np.int8)
 
     # Extract real and imaginary parts for mapping x -> x, y -> y.real, z -> y.imag
 
-    df = pd.DataFrame(normalised.T, columns=("x", "Ψ(x)", "Ψ*(x)"))
+    df = pd.DataFrame({"Ψ(x)": data_x, "Ψ*(x)": data_y, "Δs": data_z, "x": x_vals.real})
 
     # Plotting
 
     # Save to disk
 
-    # df.to_csv("data.v10.csv")
+    df.to_csv(f"data.v10.n{index}.csv")
 
     df.to_hdf("data.h5", f"v10n{index}")

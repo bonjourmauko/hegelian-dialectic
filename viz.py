@@ -45,24 +45,34 @@ pen_colors = [
     *["#ffffff"] * 100,
 ]
 
-for index in range(1, 10**6 + 1):
+data = pandas.read_hdf("data.h5", f"v10n{10**7}")
+
+for index in range(1, 10001):
     # Read data
-    data = pandas.read_hdf("data.h5", f"v10n{index}")
+    # data = pandas.read_hdf("data.h5", f"v10n{index}")
+
+    j = 10**2
+    n = index * j
 
     # Set background
     background_color = pyqtgraph.mkColor(random.choice(background_colors))
     pyqtgraph.setConfigOption("background", background_color)
     pyqtgraph.setConfigOption("foreground", background_color)
+    pyqtgraph.setConfigOption("useOpenGL", True)
+    pyqtgraph.setConfigOption("useCupy", True)
+    pyqtgraph.setConfigOption("useNumba", False)
 
     # Create line
     pen_color = pyqtgraph.mkColor(random.choice(pen_colors))
-    pen = pyqtgraph.mkPen(color=pen_color, width=10.0 / (index / 10 ^ 3))
+    pen = pyqtgraph.mkPen(color=pen_color, width=10.0 / (index / 10))
 
     # Plot
-    plot = pyqtgraph.plot(data["Ψ(x)"], data["Ψ*(x)"], pen=pen)
+    plot = pyqtgraph.plot()
+    plot.setGeometry(0, 0, image_width, image_height)
+    plot.plot(data["Ψ(x)"][: (n - j)], data["Ψ*(x)"][: (n - j)], pen=pen)
 
     # Export
     exporter = pyqtgraph.exporters.ImageExporter(plot.plotItem)
-    exporter.params["width"] = image_width
-    exporter.params["height"] = image_height
+    # exporter.params["width"] = image_width
+    # exporter.params["height"] = image_height
     exporter.export(f"img/{index}.png")
