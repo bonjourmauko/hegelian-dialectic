@@ -5,33 +5,28 @@ import numpy as np
 import pandas as pd
 
 # Total number of iterations
-n = 10**7
+n = 10**5
+
+# Slice
+s = 10**4
 
 # Number of oscillations
-p = (n / 10**3) * np.pi
+p = n / s * np.pi
 
 
 def psi_1(x):
     """Being"""
-    x = x.real
-    k = x % np.pi
-    real_part = np.cos(k)
-    imag_part = np.sin(k)
-    return real_part + 1j * imag_part
+    return np.cos(x)
 
 
 def psi_2(x):
     """Nothing"""
-    return psi_1(x) + psi_3(x)
+    return 1j * np.sin(x)
 
 
 def psi_3(x):
-    """Becoming — Difference — Identity"""
-    x = x.real
-    k = x % np.pi
-    real_part = np.cos(x)
-    imag_part = -np.sin(x)
-    return real_part + 1j * imag_part
+    """Becoming — Difference — Identity — ?"""
+    return psi_1(x) + psi_2(x)
 
 
 def psi_4(x):
@@ -46,7 +41,7 @@ def psi_5(x):
 
 def psi_6(x):
     """Equilibrium"""
-    return psi_4(psi_3(x)) - psi_5(psi_3(x))
+    return psi_5(psi_3(x)) + psi_4(psi_3(x))
 
 
 def psi_7(x):
@@ -61,7 +56,7 @@ def psi_8(x):
 
 def psi_9(x):
     """Harmony"""
-    return psi_8(psi_3(x)) - psi_7(psi_3(x))
+    return psi_8(psi_3(x)) + psi_7(psi_3(x))
 
 
 # Group them for Markov chaining
@@ -126,52 +121,81 @@ def psi(state, x):
     return psi_functions[state](x)
 
 
-# Generate x values
-x_vals = np.linspace(-p, p, n, dtype=np.complex128)
-
-# Generate steps
-
-values = []
-
-# Save the state differential
-
-states = []
-
-state = None
-
-for i, x in enumerate(x_vals):
-    if state is None:
-        state = 0
-        states.append(state)
-
-    else:
-        state = next_state(state)
-        states.append(state - states[i - 1])
-
-    values.append(psi(state, x))
-
-# Evaluate psi(x) for these x values
-
-psi_vals = np.array(values)
-
-
 # Normalise data
 def normalise(vector):
     return (vector - vector.min()) / (vector.max() - vector.min())
 
 
-data_x = normalise(psi_vals.real)
-data_y = normalise(psi_vals.imag)
-data_z = np.array(states, dtype=np.int8)
+for m in range(1, s + 1):
+    index = int(n * m / s)
 
-# Extract real and imaginary parts for mapping x -> x, y -> y.real, z -> y.imag
+    print(index)
 
-df = pd.DataFrame({"Ψ(x)": data_x, "Ψ*(x)": data_y, "Δs": data_z, "x": x_vals.real})
+    # Generate x values
+    x_vals = np.linspace(0, p + 1/p, index, dtype=np.complex128)
 
-# Plotting
+    # Generate steps
 
-# Save to disk
+    values = []
 
-df.to_csv(f"data.v12.n{n}.csv")
+    # Save the state differential
 
-df.to_hdf("data.h5", f"v10n{n}")
+    states = []
+
+    spinor_x = []
+    spinor_y = []
+
+    state = None
+
+    sign = None
+
+    for i, x in enumerate(x_vals):
+        if i == 0:
+            state = 0
+            states.append(state)
+            spinor_x.append(np.random.choice(np.linspace(-1/2, 1/2, 2)))
+            spinor_y.append(np.random.choice(np.linspace(-1j/2, 1j/2, 2)))
+
+        else:
+            state = next_state(state)
+            states.append(state)
+            delta = state - states[i - 1]
+
+            if delta == 0:
+                sign = 1
+
+            else:
+                sign = np.sign(delta)
+
+            spinor_x.append(
+                sign
+                * np.sign(spinor_x[i - 1])
+                * np.random.choice(np.linspace(-1/2, 1/2, 2))
+            )
+            spinor_y.append(
+                sign
+                * np.sign(spinor_y[i - 1])
+                * np.random.choice(np.linspace(-1j/2, 1j/2, 2))
+            )
+
+        values.append(psi(state, x) * (spinor_x[i] + spinor_y[i]))
+
+    # Evaluate psi(x) for these x values
+
+    psi_vals = np.array(values)
+
+    data_x = normalise(psi_vals.real)
+    data_y = normalise(psi_vals.imag)
+
+    # Extract real and imaginary parts for mapping x -> x, y -> y.real, z -> y.imag
+
+    df = pd.DataFrame({"Ψ(x)": data_x, "Ψ*(x)": data_y})
+    lower = df.quantile(0.0001)
+    upper = df.quantile(0.9999)
+    df_clipped = df.clip(lower, upper, axis=1)
+
+    # Plotting
+
+    # Save to disk
+
+    df_clipped.to_hdf("data.h5", key=f"v12n{m}")

@@ -142,7 +142,7 @@ for index in range(n, n + 1):
 
     for i, x in enumerate(x_vals):
         if state is None:
-            state = 0
+            state = 8
             states.append(state)
 
         else:

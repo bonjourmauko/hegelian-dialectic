@@ -1,10 +1,11 @@
+import h5py
 import random
 import pandas
 import pyqtgraph.exporters
 
 # Config
-image_width = 4480
-image_height = 2520
+image_width = 2048
+image_height = 1080
 background_colors = [
     *[
         "#2e3440",
@@ -45,34 +46,35 @@ pen_colors = [
     *["#ffffff"] * 100,
 ]
 
-data = pandas.read_hdf("data.h5", f"v10n{10**7}")
+file = h5py.File("data.h5", "r")
 
-for index in range(1, 10001):
+for index, name in enumerate(list(file)):
     # Read data
-    # data = pandas.read_hdf("data.h5", f"v10n{index}")
+    df = pandas.read_hdf("data.h5", name)
 
-    j = 10**2
-    n = index * j
+    # Clip for better biz
+    lower = df.quantile(0.05)
+    upper = df.quantile(0.95)
+    data = df.clip(lower, upper, axis=1)
+
+    # Get length of data
+    total = len(list(file))
 
     # Set background
     background_color = pyqtgraph.mkColor(random.choice(background_colors))
     pyqtgraph.setConfigOption("background", background_color)
     pyqtgraph.setConfigOption("foreground", background_color)
-    pyqtgraph.setConfigOption("useOpenGL", True)
-    pyqtgraph.setConfigOption("useCupy", True)
-    pyqtgraph.setConfigOption("useNumba", False)
 
     # Create line
     pen_color = pyqtgraph.mkColor(random.choice(pen_colors))
-    pen = pyqtgraph.mkPen(color=pen_color, width=10.0 / (index / 10))
+    pen = pyqtgraph.mkPen(color=pen_color)
+    pen.setWidthF(0.1 - index * (0.1 - 0.01) / (total - 1))
 
     # Plot
     plot = pyqtgraph.plot()
     plot.setGeometry(0, 0, image_width, image_height)
-    plot.plot(data["Ψ(x)"][: (n - j)], data["Ψ*(x)"][: (n - j)], pen=pen)
+    plot.plot(data["Ψ(x)"], data["Ψ*(x)"], pen=pen)
 
     # Export
     exporter = pyqtgraph.exporters.ImageExporter(plot.plotItem)
-    # exporter.params["width"] = image_width
-    # exporter.params["height"] = image_height
-    exporter.export(f"img/{index}.png")
+    exporter.export(f"img/{index + 1}.png")
